@@ -41,7 +41,7 @@ public class GUI extends ApplicationAdapter {
     camera = new PerspectiveCamera(67,
       Gdx.graphics.getWidth(),
       Gdx.graphics.getHeight());
-    camera.position.set(50f, 50f, 50f);
+    camera.position.set(75f, 75f, 75f);
     camera.lookAt(0, 0, 0);
     camera.near = 1f;
     camera.far = 3000f;
@@ -151,7 +151,7 @@ public class GUI extends ApplicationAdapter {
    * Adds key functionality.
    */
   public void controls() {
-    if (Gdx.input.isKeyJustPressed(Input.Keys.W)){
+    if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)){
       generatePlanetarySystem();
     }
   }

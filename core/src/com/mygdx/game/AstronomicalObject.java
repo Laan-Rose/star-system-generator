@@ -18,7 +18,18 @@ public class AstronomicalObject {
   private ModelInstance instance;
   private Model model;
   private Vector3 position;
+  private int perihelion;
+  private int orbitalSpeed;
+  private int radius;
+  private
   private Random random = new Random();
+  private NameGenerator nameGen = new NameGenerator();
+
+  public void AstronomicalObject() {
+    name = nameGen.generateName();
+
+
+  }
 
   /**
    * Generate values for this astronomical object so that it becomes a star.
@@ -46,5 +57,25 @@ public class AstronomicalObject {
    */
   public void generateAsIceGiant() {
 
+  }
+
+  /**
+   * Updates the position of this star/planet over time- a call to update() will make this planet
+   * orbit about its star by a small distance.
+   */
+  public void update() {
+
+  }
+
+  public ModelInstance getInstance() {
+    return instance;
+  }
+
+  public Vector3 getPosition() {
+    return position;
+  }
+
+  public String getName() {
+    return name;
   }
 }
