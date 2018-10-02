@@ -6,9 +6,6 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g3d.*;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
-import com.badlogic.gdx.graphics.g3d.attributes.DirectionalLightsAttribute;
-import com.badlogic.gdx.graphics.g3d.attributes.PointLightsAttribute;
-import com.badlogic.gdx.graphics.g3d.attributes.SpotLightsAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.graphics.g3d.environment.PointLight;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
@@ -23,21 +20,23 @@ import java.util.Random;
  * Purpose: Displays a window containing a procedurally generated planetary system.
  */
 public class GUI extends ApplicationAdapter {
-  public PerspectiveCamera camera;
-  public ModelBatch modelBatch;
-  public Environment environment;
-  public ModelBuilder modelBuilder = new ModelBuilder();
-  public Material mat;
+  private PerspectiveCamera camera;
+  private ModelBatch modelBatch;
+  private Environment environment;
+  private ModelBuilder modelBuilder = new ModelBuilder();
+  private Material mat;
   private Random rng = new Random();
-  Vector3 position = new Vector3();
-  Vector3 lightPos = position;
-  // Astronomical objects.
-  public Model[] objectModel = new Model[30];
-  public ModelInstance[] objectInstance = new ModelInstance[30];
-  public Vector3[] objectPosition = new Vector3[30];
+  // Objects representing the state of displayed planets/stars.
+  private Model[] objectModel;
+  private ModelInstance[] objectInstance;
+  private Vector3[] objectPosition;
 
   @Override
   public void create () {
+    // Set view options, including antialiasing.
+    Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+    Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT | (Gdx.graphics.getBufferFormat().coverageSampling?GL20.GL_COVERAGE_BUFFER_BIT_NV:0));
+
     // Make a camera that's looking down upon the star system.
     camera = new PerspectiveCamera(67,
       Gdx.graphics.getWidth(),
@@ -48,32 +47,28 @@ public class GUI extends ApplicationAdapter {
     camera.far = 3000f;
     camera.update();
 
-    // Initialize planets and stars.
-    for (int x = 0; x < objectModel.length; x++) {
-      objectModel[x] = new Model();
-      objectPosition[x] = new Vector3();
-    }
-
-    // Create environment and lighting.
-    modelBatch = new ModelBatch();
+    // Create environmental lighting.
     environment = new Environment();
     environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 1.0f, 1.0f, 1.0f, 1f));
-    environment.add(new DirectionalLight().set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f));
-    //lightPos.y += 20.0;
-    //environment.add(new PointLight().set(1.0f, 1.0f, 1.0f, lightPos, 1000));
+    Vector3 sunlightPosition = new Vector3();
+    environment.add(new PointLight().set(50.0f, 50.0f, 50.0f, sunlightPosition, 2000));
 
-    // Create and add planetary system.
+    // Generate and display initial planetary system.
     generatePlanetarySystem();
+    render();
   }
 
   /**
-   * Creates a star and planets.
+   * Creates a new star and set of planets.
    */
   public void generatePlanetarySystem() {
-    // Remove old stars/planets.
-    reset();
+    // Remove old planetary system (if one has already been generated).
+    dispose();
 
-    // Star.
+    // Initialize new system.
+    initializeNewSystem();
+
+    // Generate star.
     int size = rng.nextInt(6) + 6;
     mat = new Material(ColorAttribute.createDiffuse(Color.YELLOW));
     objectModel[0] = modelBuilder.createSphere(size, size, size, 20, 20, mat,
@@ -84,8 +79,8 @@ public class GUI extends ApplicationAdapter {
     objectPosition[0].z = 0.0f;
     objectInstance[0].transform.setTranslation(objectPosition[0]);
 
-    // Planets.
-    for (int x = 1; x < 10; x++)  {
+    // Generate planets.
+    for (int x = 1; x < objectModel.length; x++)  {
       size = rng.nextInt(4) + 2;
       mat = new Material(ColorAttribute.createDiffuse(Color.BROWN));
       objectModel[x] = modelBuilder.createSphere(size, size, size, 20, 20, mat,
@@ -96,71 +91,68 @@ public class GUI extends ApplicationAdapter {
       objectPosition[x].z = ((float) (rng.nextInt(8000) - 4000)) / 100;
       objectInstance[x].transform.setTranslation(objectPosition[x]);
     }
+  }
 
-    render();
+  /**
+   * Resets all arrays that contain info for planets/stars to a new size for a new system.
+   */
+  public void initializeNewSystem() {
+    // Initialize a model, instance, and position object for each planet/star.
+    objectModel = new Model[10];
+    objectInstance = new ModelInstance[10];
+    objectPosition = new Vector3[10];
+    // Initialize positions to the center of the planetary system.
+    for (int x = 0; x < objectPosition.length; x++) {
+      objectPosition[x] = new Vector3();
+    }
+
+    modelBatch = new ModelBatch();
+  }
+
+  /**
+   * Remove old planetary system data and display.
+   */
+  @Override
+  public void dispose() {
+    // Only dispose of objects if a planetary system has been generated already.
+    if (objectModel != null) {
+      for (int x = 0; x < objectModel.length; x++) {
+        objectModel[x].dispose();
+      }
+    }
+    if (modelBatch != null) {
+      modelBatch.dispose();
+      modelBatch = null;
+    }
+
+    // Set arrays to null, reinitialize them later for a new planetary system.
+    objectModel = new Model[10];
+    objectPosition = new Vector3[10];
+    objectInstance = new ModelInstance[10];
   }
 
   @Override
   public void render() {
-    // View options- antialiasing.
-    Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+    // Set view options, including antialiasing.
     Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT | (Gdx.graphics.getBufferFormat().coverageSampling?GL20.GL_COVERAGE_BUFFER_BIT_NV:0));
 
+    // Render all planetary system objects.
     modelBatch.begin(camera);
     for (int x = 0; x < 9; x++) {
       modelBatch.render(objectInstance[x], environment);
     }
     modelBatch.end();
 
+    // Begin processing user input.
     controls();
   }
 
-  public void redraw() {
-
-  }
-
-  private void controls() {
-    if (Gdx.input.isKeyPressed(Input.Keys.W)){
-      //dispose();
-      generatePlanetarySystem();
-    }
-  }
-
-  private void movement() {
-    /*instance.transform.getTranslation(position);
-    if(Gdx.input.isKeyPressed(Input.Keys.W)){
-        position.x += Gdx.graphics.getDeltaTime() * 20;
-    }
-    if(Gdx.input.isKeyPressed(Input.Keys.D)){
-        position.z+=Gdx.graphics.getDeltaTime() * 20;
-    }
-    if(Gdx.input.isKeyPressed(Input.Keys.A)){
-        position.z-=Gdx.graphics.getDeltaTime() * 20;
-    }
-    if(Gdx.input.isKeyPressed(Input.Keys.S)){
-        position.x-=Gdx.graphics.getDeltaTime() * 20;
-    }
-    instance.transform.setTranslation(position);*/
-  }
-
   /**
-   * Remove/reset all data for the current system.
+   * Adds key functionality.
    */
-  public void reset() {
-    dispose();
-
-    for (int x = 0; x < objectInstance.length; x++) {
-      objectInstance[x] = null;
-      objectPosition[x].x = 0.0f;
-      objectPosition[x].y = 0.0f;
-      objectPosition[x].z = 0.0f;
-    }
-  }
-
-  @Override
-  public void dispose() {
-    for (int x = 0; x < objectModel.length; x++) {
-      objectModel[x].dispose();
+  public void controls() {
+    if (Gdx.input.isKeyJustPressed(Input.Keys.W)){
+      generatePlanetarySystem();
     }
   }
 }
