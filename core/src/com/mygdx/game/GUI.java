@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.graphics.g3d.environment.PointLight;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
+import com.badlogic.gdx.math.Plane;
 import com.badlogic.gdx.math.Vector3;
 
 import java.util.Random;
@@ -30,6 +31,7 @@ public class GUI extends ApplicationAdapter {
   private Model[] objectModel;
   private ModelInstance[] objectInstance;
   private Vector3[] objectPosition;
+  private PlanetarySystem planetarySystem = new PlanetarySystem();
 
   @Override
   public void create () {
@@ -67,21 +69,11 @@ public class GUI extends ApplicationAdapter {
 
     // Initialize new system.
     initializeNewSystem();
-
-    // Generate star.
-    int size = rng.nextInt(6) + 6;
-    mat = new Material(ColorAttribute.createDiffuse(Color.YELLOW));
-    objectModel[0] = modelBuilder.createSphere(size, size, size, 20, 20, mat,
-      VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal);
-    objectInstance[0] = new ModelInstance(objectModel[0]);
-    objectInstance[0].transform.getTranslation(objectPosition[0]);
-    objectPosition[0].x = 0.0f; // Star located in center of system
-    objectPosition[0].z = 0.0f;
-    objectInstance[0].transform.setTranslation(objectPosition[0]);
+    planetarySystem.generate();
 
     // Generate planets.
     for (int x = 1; x < objectModel.length; x++)  {
-      size = rng.nextInt(4) + 2;
+      int size = rng.nextInt(4) + 2;
       mat = new Material(ColorAttribute.createDiffuse(Color.BROWN));
       objectModel[x] = modelBuilder.createSphere(size, size, size, 20, 20, mat,
         VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal);
@@ -116,7 +108,7 @@ public class GUI extends ApplicationAdapter {
   public void dispose() {
     // Only dispose of objects if a planetary system has been generated already.
     if (objectModel != null) {
-      for (int x = 0; x < objectModel.length; x++) {
+      for (int x = 1; x < objectModel.length; x++) {
         objectModel[x].dispose();
       }
     }
@@ -138,9 +130,10 @@ public class GUI extends ApplicationAdapter {
 
     // Render all planetary system objects.
     modelBatch.begin(camera);
-    for (int x = 0; x < 9; x++) {
+    for (int x = 1; x < 9; x++) {
       modelBatch.render(objectInstance[x], environment);
     }
+    modelBatch.render(planetarySystem.getObjectInstance(0));
     modelBatch.end();
 
     // Begin processing user input.

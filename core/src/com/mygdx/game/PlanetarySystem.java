@@ -1,5 +1,7 @@
 package com.mygdx.game;
 
+import com.badlogic.gdx.graphics.g3d.ModelInstance;
+
 import java.util.Random;
 
 /**
@@ -11,33 +13,33 @@ import java.util.Random;
  */
 public class PlanetarySystem {
   private String name;
-  private AstronomicalObject[] objects; // Stars and planets contained within this system.
+  private Star star;
+  private AstronomicalObject objects[];
   private Random random = new Random();
 
   public void generate() {
-    int planets = random.nextInt(8) + 3;
-    objects = new AstronomicalObject[planets + 1]; // +1 to make an index for the star.
+    int systemSize = random.nextInt(6) + 5;
 
-    // Generate planets and central star.
-    for (int x = 1; x < planets; x++) {
+    objects = null;
+    objects = new AstronomicalObject[systemSize];
 
-    }
+    // Generate central star.
+    objects[0] = new Star();
+    objects[0].generate();
+
+    // Generate surrounding planets.
   }
 
   /**
    * Returns the ModelInstance of a given star/planet, which is used to render the star/planet.
    */
-  public void getObjectInstance() {
+  public ModelInstance getObjectInstance(int object) {
+    return objects[object].getInstance();
   }
 
   /**
    * Returns the Vector3 object of a given star/planet, which holds the star/planet's position.
    */
   public void getObjectVector3() {
-  }
-
-
-  public AstronomicalObject[] getObjects() {
-    return objects;
   }
 }
